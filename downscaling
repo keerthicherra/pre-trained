@@ -1,0 +1,110 @@
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+# Step 1: Set the correct model path
+# Make sure this model exists and is accessible (public or with proper permissions)
+model_name_or_path = "upstage/solar-docvision-preview"  # Replace with the correct model ID if this one is invalid
+
+# Step 2: Use your Hugging Face token
+huggingface_token = "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"  # Replace with your actual Hugging Face token
+
+# Step 3: Load the tokenizer with the token
+try:
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name_or_path,
+        use_auth_token=huggingface_token
+    )
+except Exception as e:
+    print(f"Error loading tokenizer: {e}")
+
+# Step 4: Load the model with the token
+try:
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name_or_path,
+        torch_dtype=torch.float32,  # Using float32 for better CPU compatibility; change as needed
+        use_auth_token=huggingface_token
+    ).to("cuda" if torch.cuda.is_available() else "cpu")
+except Exception as e:
+    print(f"Error loading model: {e}")
+
+# Step 5: Define the prompt
+prompt = "I am an engineer. I love"
+
+# Step 6: Tokenize the input prompt
+try:
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+except Exception as e:
+    print(f"Error during tokenization: {e}")
+
+# Step 7: Generate text from the model
+try:
+    outputs = model.generate(
+        **inputs,
+        max_new_tokens=128,  # Adjust this based on your needs
+        do_sample=False,     # Deterministic output; set to True for creative text
+        use_cache=True
+    )
+
+    # Step 8: Decode the generated output
+    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    print("Generated Text:", generated_text)
+
+except Exception as e:
+    print(f"Error during text generation: {e}")
+
+# NOTE: We're running large models in a limited environment. Run me if you encounter any memory issues.
+# Check if 'model' exists before trying to delete it
+if 'model' in globals():
+    del model
+gc.collect()
+
+
+ from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+# Add your Hugging Face token here
+huggingface_token = "your_huggingface_token"
+
+# Load the model and tokenizer
+model_name_or_path = "upstage/solar-pro-preview-pretrained"
+
+try:
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name_or_path,
+        device_map="cpu",           # Use "cuda" if GPU is available
+        torch_dtype=torch.float32,  # Adjust dtype if needed
+        use_auth_token=huggingface_token  # Pass the token directly here
+    )
+    print("Model loaded successfully.")
+except Exception as e:
+    print(f"Error loading model: {e}")
+
+try:
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name_or_path,
+        use_auth_token=huggingface_token  # Pass the token directly here
+    )
+    print("Tokenizer loaded successfully.")
+except Exception as e:
+    print(f"Error loading tokenizer: {e}")
+
+# Function to print the number of parameters in the model
+def print_nparams(model):
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,}")
+
+# Print the model architecture if loaded successfully
+if 'model' in locals():
+    print(model)
+    print_nparams(model)
+
+      # NOTE: We're running large models in a limited environment. Run me if you encounter any memory issues.
+import gc
+
+# Check if 'model' exists before trying to delete it
+if 'model' in globals():
+    del model
+
+gc.collect()
