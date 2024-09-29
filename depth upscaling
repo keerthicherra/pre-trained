@@ -1,0 +1,82 @@
+config = LlamaConfig(
+    num_hidden_layers=16,  # We want our model to have 16 final layers
+    hidden_size=1024,
+    intermediate_size=4096,
+    num_attention_heads=32,
+    num_key_value_heads=8,
+    torch_dtype="bfloat16",
+    use_cache=False
+)
+print(config)
+
+model = LlamaForCausalLM(config)
+model = model.to(dtype=torch.bfloat16)  # convert to bfloat16
+print_nparams(model)  # 308839424 => 308M
+
+model_name_or_path = "upstage/TinySolar-248m-4k"
+pretrained_model = AutoModelForCausalLM.from_pretrained(
+    model_name_or_path,
+    device_map="cpu",
+    torch_dtype=torch.bfloat16,
+)
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+
+print_nparams(pretrained_model) #  248013824 => 248M
+
+  
+from copy import deepcopy
+model.model.layers = deepcopy(pretrained_model.model.layers[:-4]) \
+    + deepcopy(pretrained_model.model.layers[4:])
+model.model.embed_tokens = deepcopy(pretrained_model.model.embed_tokens)
+model.lm_head = deepcopy(pretrained_model.lm_head)
+print(model.config)
+
+print_nparams(model)  # 308839424 => 308M
+
+from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+
+# Use a publicly available model (e.g., GPT-2)
+model_name_or_path = "gpt2"
+
+# Load the model and tokenizer with authentication
+try:
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name_or_path,
+        device_map="auto",  # Use "cpu" if GPU is not available
+        torch_dtype=torch.float32
+    )
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name_or_path
+    )
+    print("Model and tokenizer loaded successfully.")
+
+    # Test loading
+    print("Model architecture:", model)
+    print("Tokenizer vocab size:", tokenizer.vocab_size)
+
+except Exception as e:
+    print(f"Error loading model or tokenizer: {e}")
+    raise
+
+
+  # Run simple inference to show no trained model
+prompt = "Tokenizers are essential tools in machine learning, especially in natural language processing (NLP). They break down text into smaller units called tokens. These tokens can be words, subwords, or characters."
+
+inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+
+streamer = TextStreamer(
+    tokenizer,
+    skip_prompt=False,
+    skip_special_tokens=False
+)
+
+outputs = model.generate(
+    **inputs,
+    streamer=streamer,
+    use_cache=False,
+    max_new_tokens=228,
+    do_sample=True
+)
+
+ model.save_pretrained('./data/TinySolar-308m-4k-init') 
