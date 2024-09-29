@@ -469,4 +469,23 @@ packaged_pretrain_dataset = datasets.Dataset.from_dict(
 )
 print(packaged_pretrain_dataset)
 
+## 3. Save the packed dataset to disk
 
+packaged_pretrain_dataset.to_parquet("./data/packaged_pretrain_dataset.parquet")
+
+# Lesson 4: Preparing your model for training
+
+# Ignore insignificant warnings (ex: deprecation warnings)
+import warnings
+warnings.filterwarnings('ignore')
+
+# Set a seed value for reproducibility
+import torch
+
+def fix_torch_seed(seed=42):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+fix_torch_seed()
